@@ -1,13 +1,19 @@
 import mongoose from 'mongoose'
 import { generateHashedPassword } from '../utilities/encryption.js'
+import settings from '../config/settings.js'
+
+const roleEnum = Object.keys(settings.roles)
 
 const userSchema = new mongoose.Schema(
   {
-    email: { type: String, required: [ true, `Missing field 'name'` ], unique: true, trim: true },
+    email: { type: String, required: [ true, `Missing field 'email'` ], unique: true, trim: true },
+    name: { type: String, required: [ true, `Missing field 'name'` ] },
     password: { type: String },
     salt: { type: String },
-    name: { type: String, required: [ true, `Missing field 'name'` ] },
-    tokenDate: { type: Date, default: new Date() }
+    tokenDate: { type: Date, default: new Date() },
+    teams: [{ type: mongoose.SchemaTypes.ObjectId, ref: 'Team' }],
+    role: { type: String, enum: roleEnum, default: settings.roles.user },
+    deletedAt: { type: Date, default: null },
   },
   {
     timestamps: true,

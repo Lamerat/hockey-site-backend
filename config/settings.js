@@ -12,10 +12,17 @@ const env = process.env.NODE_ENV || 'development'
 // SOCKET SETTINGS
 const socketMessage = 'socket-message'
 
+// ROLES
+const roles = {
+  root: 'root',
+  admin: 'admin',
+  user: 'user'
+}
+
 // DATABASE SETTINGS
 const databaseAddress = {
-  development: process.env.DEV_DB || `mongodb+srv://root:parola@cluster0.6hjje.mongodb.net/test-dev?retryWrites=true&w=majority`,
-  production: process.env.PROD_DB || 'mongodb+srv://root:parola@cluster0.6hjje.mongodb.net/test-prod?retryWrites=true&w=majority'
+  development: process.env.DEV_DB || `mongodb+srv://root:k4rbur4tor@cluster0.7zjjw.mongodb.net/hockey-dev?retryWrites=true&w=majority`,
+  production: process.env.PROD_DB || 'mongodb+srv://root:k4rbur4tor@cluster0.7zjjw.mongodb.net/hockey-prod?retryWrites=true&w=majority'
 }
 
 const settings = {
@@ -24,6 +31,7 @@ const settings = {
   db: databaseAddress[env],
   jwtKey,
   socketMessage,
+  roles,
 }
 
 export default settings
