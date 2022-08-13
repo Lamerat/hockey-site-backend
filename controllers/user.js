@@ -27,7 +27,7 @@ export const login = async (req, res) => {
       role: user.role,
       teams: user.teams
     }
-    const result = { token, userData }
+    const result = { token, user: userData }
     rest.successRes(res, result)
   } catch (error) {
     rest.errorRes(res, error)
