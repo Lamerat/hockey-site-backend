@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <style>
+      .board { height: 300px; border: 1px solid black }
+    </style>
+    <meta charset="UTF-8">
+    <title>Socket User</title>
+    <script src="http://localhost:5000/socket.io/socket.io.js"></script>
+    <script>
+      const customerId = '61efe69c2862e11588610f72'
+      const systemId = '61ee8b87a07ddf1eb8268265'
+      const name = 'Чавдар Вълчев'
+      const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2MWVlYTFlODQyODNmZjMyMWNhMTk3NGYiLCJ0b2tlbkRhdGUiOiIyMDIyLTA2LTE2VDA3OjU1OjAyLjgyMFoiLCJpYXQiOjE2NTUzNjYxMDJ9.WN9sab9wny9vagsfb-HHGSdhGJa_ianVhhHMk17rne8'
+      // const socketURL = `http://localhost:5000?systemId=${systemId}&name=${name}`
+      // const socketURL = `http://localhost:5000?customerId=${customerId}`
+      const socketURL = `http://localhost:5000?token=${token}`
+      const socket = io(socketURL)
+
+      socket.on('socket-message', (payload) => {
+        if (payload.action === 'socket/info' || payload.action === 'socket/allRead') {
+          console.log (payload.payload.message)
+        }
+
+        if (payload.action === 'socket/message') {
+          const oldMessages = document.getElementById('textArea')
+          oldMessages.innerHTML = `${oldMessages.innerHTML}<b>${payload.payload.name}: </b> ${payload.payload.text}<br/>`
+        }
+
+        if (payload.action === 'socket/init') {
+          const menu = document.getElementById('tickets')
+          menu.innerHTML = payload.payload.tickets.map(x => `<option value='${x._id}'>${x.name}</option>`).join('<\n>')
+          document.getElementById("ticketsMine").innerHTML = payload.payload.tickets.map(x => `${x.name} - unread: ${x._unreadCustomer}`).join('<br/>\n')
+        }
+
+        if (payload.action === 'socket/createTicket') {
+          const menu = document.getElementById('tickets')
+          menu.innerHTML = `${menu.innerHTML}\n<option value='${payload.payload._id}'>${payload.payload.name}</option>`
+        }
+
+        if (payload.action === 'socket/ticketMessages') {
+          const oldMessages = document.getElementById('textArea')
+          oldMessages.innerHTML = `${oldMessages.innerHTML}\n${payload.payload.docs.map(x => `<b>${x.from.name}: </b> ${x.text}`).join('<br/>')}<br/>`
+        }
+
+        if (payload.action === 'socket/myTickets') {
+          document.getElementById("ticketsMine").innerHTML = payload.payload.tickets.map(x => `${x.name} - unread: ${x._unreadCustomer}`).join('<br/>\n')
+        }
+
+
+        if (payload.action === 'socket/error') {
+          console.log('ERROR::', payload.payload.error)
+        }
+      })
+
+      socket.on('error', (payload) => console.log('ERROR::', payload))
+
+      document.addEventListener('DOMContentLoaded', () => {
+        document.getElementById('createTicket').addEventListener('click', () => {
+          socket.emit('socket-message', { action: 'createTicket', payload: { name: document.getElementById('ticketName').value } })
+        })
+
+        document.getElementById('sendMessage').addEventListener('click', () => {
+          socket.emit('socket-message', { action: 'sendMessage', payload: { ticket: document.getElementById('tickets').value, text: document.getElementById('messageText').value } })
+        })
+
+        document.getElementById('getMessages').addEventListener('click', () => {
+          socket.emit('socket-message', { action: 'nextMessages', payload: { pageNumber: document.getElementById('pageNum').value, ticket: document.getElementById('tickets').value, limit: null} })
+        })
+
+        document.getElementById('joinTicket').addEventListener('click', () => {
+          socket.emit('socket-message', { action: 'joinTicket', payload: { ticket: document.getElementById('tickets').value} })
+        })
+
+        document.getElementById('leaveRooms').addEventListener('click', () => {
+          socket.emit('socket-message', { action: 'leaveAll' })
+        })
+
+        document.getElementById('voteTicket').addEventListener('click', () => {
+          socket.emit('socket-message', { action: 'voteTicket', payload: { ticket: document.getElementById('tickets').value, rating: 1 } })
+        })
+
+        document.getElementById('markRead').addEventListener('click', () => {
+          socket.emit('socket-message', { action: 'markAllRead', payload: { ticket: document.getElementById('tickets').value } })
+        })
+
+        document.getElementById('myTikets').addEventListener('click', () => {
+          socket.emit('socket-message', { action: 'myTickets' })
+        })
+      })
+      </script>
+  </head>
+  <body>
+    <div type="text" id="textArea" class="board" > </div><br>
+    <table>
+      <tr>
+        <td>
+          <label for="tickets">Choose ticket:</label>
+          <select id="tickets" name="tickets"></select>
+          <input type="button" value="JOIN" id="joinTicket" /><br/><br/>
+          <input type="text" id="messageText" />
+          <input type="button" value="Send message" id="sendMessage" /><br/><br/>
+          <input type="text" id="ticketName" />
+          <input type="button" value="Create ticket" id="createTicket" /><br/><br/>
+          <label for="pageNum">Choose page:</label>
+          <input type="number" id="pageNum" name="pageNum" min="1" max="100" value="1">
+          <input type="button" value="Get messages" id="getMessages" /><br/><br/>
+          <input type="button" value="Leave all rooms" id="leaveRooms" /><br/><br/>
+          <input type="button" value="My Tickets" id="myTikets" /><br/><br/>
+          <input type="button" value="Vote ticket" id="voteTicket" /><br/><br/>
+          <input type="button" value="Mark all as read" id="markRead" /><br/><br/>
+        </td>
+        <td>
+          <div>
+            <u>My Tickets</u>
+          </div>
+          <div id="ticketsMine"></div>
+        </td>
+      </tr>
+    </table>
+    
+  </body>
+</html>

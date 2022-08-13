@@ -1,0 +1,23 @@
+{
+  "name": "express-server",
+  "version": "1.0.0",
+  "description": "Express Server template",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node index.js",
+    "test": "nodemon --verbose --signal SIGKILL --delay 1"
+  },
+  "keywords": [],
+  "author": "Simeon Mladenov",
+  "license": "ISC",
+  "dependencies": {
+    "@sea_flanker/terminal": "^0.0.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.0.1",
+    "express": "^4.18.1",
+    "jsonwebtoken": "^8.5.1",
+    "mongoose": "^6.4.0",
+    "socket.io": "^2.4.1"
+  }
+}
