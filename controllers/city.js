@@ -10,7 +10,7 @@ bodyValidator.addField({ name: 'name', type: 'String', options: { canBeEmpty: fa
 bodyValidator.addField({ name: 'shared', type: 'Boolean', required: false })
 bodyValidator.addField({ name: 'type', type: 'String', options: { enum: ['system', 'personal'] }, required: false })
 
-const formatCityName = (name) => name.split(' ').filter(x => x !== ' ').map(s => s && s[0].toUpperCase() + s.slice(1)).join(' ')
+const formatCityName = (name) => name.split(' ').filter(x => x !== '').map(s => s && s[0].toUpperCase() + s.slice(1)).join(' ')
 
 /** @type { import('express').RequestHandler } */
 export const create = async (req, res) => {
@@ -26,6 +26,7 @@ export const create = async (req, res) => {
     const getTeamMembers = await User.find({ team }).select('_id').lean()
     const members = getTeamMembers.map(x => x._id)
     body.name = formatCityName(body.name)
+    console.log(body.name)
     const checkForExist = await City.findOne({ name: body.name }).lean()
     
     if (checkForExist) {
@@ -34,7 +35,7 @@ export const create = async (req, res) => {
     }
 
     const result = await City.create({ ...body, createdBy: _id })
-    rest.successRes(res, result)
+    rest.successRes(res, { ...result.toObject(), canEdit: true })
   } catch (error) {
     rest.errorRes(res, error)
   }
