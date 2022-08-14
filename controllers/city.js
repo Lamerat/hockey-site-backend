@@ -50,7 +50,7 @@ export const single = async (req, res) => {
 
     const filter = { _id, deletedAt: null, $or: [{ createdBy: { $in: members } }, { type: 'system' }, { shared: true }] }
     
-    const result = await City.findOne(filter).lean()
+    const result = await City.findOne(filter).populate({ path: 'createdBy', select: 'name' }).lean()
     rest.successRes(res, result)
   } catch (error) {
     rest.errorRes(res, error)
