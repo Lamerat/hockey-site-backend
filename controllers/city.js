@@ -96,7 +96,7 @@ export const edit = async (req, res) => {
   try {
     const { _id } = req.params
     const { name, shared } = req.body
-    const { team, _id: user } = req.user
+    const { team } = req.user
 
     const convertName = formatCityName(name)
 
@@ -115,7 +115,7 @@ export const edit = async (req, res) => {
     const result = await City.findOneAndUpdate({ ...filter }, { name: convertName, shared }, { new: true, runValidators: true }).lean()
     if (!result) throw new CError(`Такъв град не съществува или нямате правомощия да го редактирате!`)
     
-    rest.successRes(res, result)
+    rest.successRes(res, { ...result, canEdit: true})
   } catch (error) {
     rest.errorRes(res, error)
   }
