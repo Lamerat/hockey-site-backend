@@ -24,15 +24,12 @@ export const create = async (req, res) => {
     if (body?.type === 'system' && role !== settings.roles.root ) throw new CError(`Only root can add 'system' records!`, 403)
 
     const getTeamMembers = await User.find({ team }).select('_id').lean()
-    const members = getTeamMembers.map(x => x._id)
+    const members = getTeamMembers.map(x => x._id.toString())
     body.name = formatCityName(body.name)
-    console.log(body.name)
-    const checkForExist = await City.findOne({ name: body.name }).lean()
-    
-    if (checkForExist) {
-      if (checkForExist.type === 'system') throw new CError(`Има добавен системно град с име '${body.name}'`, 409)
-      if (members.map(x => x.toString()).includes(_id.toString())) throw new CError(`Вече имате добавен град с име '${body.name}'`, 409)
-    }
+
+    const checkForExist = await City.find({ name: body.name }).lean()
+    if (checkForExist.some(x => x.type === 'system')) throw new CError(`Има добавен системно град с име '${body.name}'`, 409)
+    if (checkForExist.some(x => members.includes(x.createdBy.toString()))) throw new CError(`Вече имате добавен град с име '${body.name}'`, 409)
 
     const result = await City.create({ ...body, createdBy: _id })
     rest.successRes(res, { ...result.toObject(), canEdit: true })
@@ -107,13 +104,11 @@ export const edit = async (req, res) => {
     if (!validate.success) throw new CError(validate.errors, 422)
 
     const getTeamMembers = await User.find({ team }).select('_id').lean()
-    const members = getTeamMembers.map(x => x._id)
-    const checkForExist = await City.findOne({ name: convertName, _id: { $ne: _id } }).lean()
-    
-    if (checkForExist) {
-      if (checkForExist.type === 'system') throw new CError(`Има добавен системно град с име '${convertName}'`, 409)
-      if (members.map(x => x.toString()).includes(user.toString())) throw new CError(`Вече имате добавен град с име '${convertName}'`, 409)
-    }
+    const members = getTeamMembers.map(x => x._id.toString())
+
+    const checkForExist = await City.find({ name: convertName, _id: { $ne: _id } }).lean()
+    if (checkForExist.some(x => x.type === 'system')) throw new CError(`Има добавен системно град с име '${body.name}'`, 409)
+    if (checkForExist.some(x => members.includes(x.createdBy.toString()))) throw new CError(`Вече имате добавен град с име '${body.name}'`, 409)
 
     const filter = { _id, deletedAt: null, type: { $ne: 'system' }, createdBy: { $in: members } }
     
