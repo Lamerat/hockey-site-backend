@@ -11,7 +11,7 @@ const userSchema = new mongoose.Schema(
     password: { type: String },
     salt: { type: String },
     tokenDate: { type: Date, default: new Date() },
-    teams: [{ type: mongoose.SchemaTypes.ObjectId, ref: 'Team' }],
+    team: { type: mongoose.SchemaTypes.ObjectId, ref: 'Team' },
     role: { type: String, enum: roleEnum, default: settings.roles.user },
     deletedAt: { type: Date, default: null },
   },

@@ -1,5 +1,6 @@
 import mongoose from 'mongoose'
 import mongoosePaginate from 'mongoose-paginate-v2'
+import aggregatePaginate from 'mongoose-aggregate-paginate-v2'
 const cityEnum = ['system', 'personal']
 
 const citySchema = new mongoose.Schema(
@@ -20,6 +21,7 @@ const citySchema = new mongoose.Schema(
 citySchema.index({ createdAt: 1 })
 citySchema.index({ updatedAt: 1 })
 citySchema.plugin(mongoosePaginate)
+citySchema.plugin(aggregatePaginate)
 
 const City = mongoose.model('City', citySchema)
 

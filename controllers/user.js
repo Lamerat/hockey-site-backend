@@ -11,9 +11,9 @@ export const login = async (req, res) => {
   try {
     const { email, password } = req.body
 
-    const user = await User.findOne({ email }).populate({ path: 'teams', select: 'name' })
-    if (!user) throw new CError(`this user don't exists!`, 404)
-    if (user && !user.authenticate(password.trim())) throw new CError(`Problem with authentication!`, 401)
+    const user = await User.findOne({ email }).populate({ path: 'team', select: 'name' })
+    if (!user) throw new CError(`Такъв потребител не съществува!`, 404)
+    if (user && !user.authenticate(password.trim())) throw new CError(`Неуспешна идентификация!`, 401)
 
     const tokenDate = new Date()
     await User.findOneAndUpdate({ _id: user._id }, { tokenDate }, {})
@@ -25,7 +25,7 @@ export const login = async (req, res) => {
       email: user.email,
       name: user.name,
       role: user.role,
-      teams: user.teams
+      team: user.team
     }
     const result = { token, user: userData }
     rest.successRes(res, result)

@@ -1,4 +1,5 @@
 import City from '../models/City.js'
+import User from '../models/User.js'
 import CError from '../utilities/CError.js'
 import * as rest from '../utilities/express-helpers.js'
 import { Validator } from 'body-validator-v2'
@@ -32,15 +33,14 @@ export const create = async (req, res) => {
 export const single = async (req, res) => {
   try {
     const { _id } = req.params
-    const { _id: user } = req.user
+    const { team } = req.user
 
-    const filter = [
-      { createdBy: user },
-      { type: 'system' },
-      { shared: true }
-    ]
+    const getTeamMembers = await User.find({ team }).select('_id').lean()
+    const members = getTeamMembers.map(x => x._id)
+
+    const filter = { _id, deletedAt: null, $or: [{ createdBy: { $in: members } }, { type: 'system' }, { shared: true }] }
     
-    const result = await City.findOne({ _id, $or: filter }).lean()
+    const result = await City.findOne(filter).lean()
     rest.successRes(res, result)
   } catch (error) {
     rest.errorRes(res, error)
@@ -51,26 +51,75 @@ export const single = async (req, res) => {
 /** @type { import('express').RequestHandler } */
 export const list = async (req, res) => {
   try {
-    const { pageNumber, pageSize, noPagination, search } = req.body
-    const { _id: user } = req.user
+    const { pageNumber, pageSize, noPagination } = req.body
+    const { team } = req.user
 
-    const filter = [
-      { createdBy: user },
-      { type: 'system' },
-      { shared: true }
+    const getTeamMembers = await User.find({ team }).select('_id').lean()
+    const members = getTeamMembers.map(x => x._id)
+    
+    const filter = { deletedAt: null, $or: [{ createdBy: { $in: members } }, { type: 'system' }, { shared: true }] }
+
+    const pipeline = [
+      { $match: filter },
+      { $addFields: { canEdit: { $cond: [ { $and: [ { $in: [ '$createdBy', members ] }, { $ne: ['$type', 'system'] }] }, true, false] } } }
     ]
 
-    const query = { deletedAt: null, $or: filter }
-    
-    const result = await City.paginate(query, {
+    const aggregateQuery = City.aggregate(pipeline)
+
+    const result = await City.aggregatePaginate(aggregateQuery, {
       page: pageNumber || 1,
       limit: pageSize || 10,
-      sort: { createdAt: -1 },
-      lean: true,
       pagination: noPagination ? false : true,
-      select: '-__v -deletedAt',
-      populate: { path: 'createdBy', select: 'name' }
+      sort: { type: -1, canEdit: -1 },
+      lean: true,
     })
+
+    rest.successRes(res, result)
+  } catch (error) {
+    rest.errorRes(res, error)
+  }
+}
+
+
+/** @type { import('express').RequestHandler } */
+export const edit = async (req, res) => {
+  try {
+    const { _id } = req.params
+    const { name, shared } = req.body
+    const { team } = req.user
+
+    const validate = bodyValidator.validate(req.body, false)
+    if (!validate.success) throw new CError(validate.errors, 422)
+
+    const getTeamMembers = await User.find({ team }).select('_id').lean()
+    const members = getTeamMembers.map(x => x._id)
+
+    const filter = { _id, deletedAt: null, type: { $ne: 'system' }, createdBy: { $in: members } }
+    
+    const result = await City.findOneAndUpdate({ ...filter }, { name, shared }, { new: true, runValidators: true }).lean()
+    if (!result) throw new CError(`Такъв град не съществува или нямате правомощия да го редактирате!`)
+    
+    rest.successRes(res, result)
+  } catch (error) {
+    rest.errorRes(res, error)
+  }
+}
+
+
+/** @type { import('express').RequestHandler } */
+export const remove = async (req, res) => {
+  try {
+    const { _id } = req.params
+    const { team } = req.user
+
+    const getTeamMembers = await User.find({ team }).select('_id').lean()
+    const members = getTeamMembers.map(x => x._id)
+
+    const filter = { _id, deletedAt: null, type: { $ne: 'system' }, createdBy: { $in: members } }
+    
+    const result = await City.findOneAndUpdate({ ...filter }, { deletedAt: new Date() }, { new: true, runValidators: true }).lean()
+    if (!result) throw new CError(`Такъв град не съществува или нямате правомощия да го изтриете!`)
+    
     rest.successRes(res, result)
   } catch (error) {
     rest.errorRes(res, error)

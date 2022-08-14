@@ -22,7 +22,7 @@ const authentication = (req, res, next) => {
           email: user.email,
           name: user.name,
           role: user.role,
-          teams: user.teams
+          team: user.team
         }
         next()
       })
