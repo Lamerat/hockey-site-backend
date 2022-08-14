@@ -6,20 +6,32 @@ import { Validator } from 'body-validator-v2'
 import settings from '../config/settings.js'
 
 const bodyValidator = new Validator()
-bodyValidator.addField({ name: 'name', type: 'String', options: { canBeEmpty: false, min: 2 }, required: true })
+bodyValidator.addField({ name: 'name', type: 'String', options: { canBeEmpty: false, minSymbols: 2 }, required: true })
 bodyValidator.addField({ name: 'shared', type: 'Boolean', required: false })
 bodyValidator.addField({ name: 'type', type: 'String', options: { enum: ['system', 'personal'] }, required: false })
 
+const formatCityName = (name) => name.split(' ').filter(x => x !== ' ').map(s => s && s[0].toUpperCase() + s.slice(1)).join(' ')
 
 /** @type { import('express').RequestHandler } */
 export const create = async (req, res) => {
   try {
     const { body } = req
-    const { _id, role } = req.user
+    const { _id, role, team } = req.user
 
+    if (!body.name) throw new CError(`'Missing field 'name'`)
     const validate = bodyValidator.validate(body, true)
     if (!validate.success) throw new CError(validate.errors, 422)
     if (body?.type === 'system' && role !== settings.roles.root ) throw new CError(`Only root can add 'system' records!`, 403)
+
+    const getTeamMembers = await User.find({ team }).select('_id').lean()
+    const members = getTeamMembers.map(x => x._id)
+    body.name = formatCityName(body.name)
+    const checkForExist = await City.findOne({ name: body.name }).lean()
+    
+    if (checkForExist) {
+      if (checkForExist.type === 'system') throw new CError(`Има добавен системно град с име '${body.name}'`, 409)
+      if (members.map(x => x.toString()).includes(_id.toString())) throw new CError(`Вече имате добавен град с име '${body.name}'`, 409)
+    }
 
     const result = await City.create({ ...body, createdBy: _id })
     rest.successRes(res, result)
@@ -86,17 +98,25 @@ export const edit = async (req, res) => {
   try {
     const { _id } = req.params
     const { name, shared } = req.body
-    const { team } = req.user
+    const { team, _id: user } = req.user
+
+    const convertName = formatCityName(name)
 
     const validate = bodyValidator.validate(req.body, false)
     if (!validate.success) throw new CError(validate.errors, 422)
 
     const getTeamMembers = await User.find({ team }).select('_id').lean()
     const members = getTeamMembers.map(x => x._id)
+    const checkForExist = await City.findOne({ name: convertName, _id: { $ne: _id } }).lean()
+    
+    if (checkForExist) {
+      if (checkForExist.type === 'system') throw new CError(`Има добавен системно град с име '${convertName}'`, 409)
+      if (members.map(x => x.toString()).includes(user.toString())) throw new CError(`Вече имате добавен град с име '${convertName}'`, 409)
+    }
 
     const filter = { _id, deletedAt: null, type: { $ne: 'system' }, createdBy: { $in: members } }
     
-    const result = await City.findOneAndUpdate({ ...filter }, { name, shared }, { new: true, runValidators: true }).lean()
+    const result = await City.findOneAndUpdate({ ...filter }, { name: convertName, shared }, { new: true, runValidators: true }).lean()
     if (!result) throw new CError(`Такъв град не съществува или нямате правомощия да го редактирате!`)
     
     rest.successRes(res, result)
