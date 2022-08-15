@@ -89,7 +89,16 @@ export const list = async (req, res) => {
 
     const pipeline = [
       { $match: filter },
-      { $addFields: { canEdit: { $cond: [ { $and: [ { $in: [ '$createdBy', members ] }, { $ne: ['$type', 'system'] }] }, true, false] } } }
+      { $addFields: { canEdit: { $cond: [ { $and: [ { $in: [ '$createdBy', members ] }, { $ne: ['$type', 'system'] }] }, true, false] } } },
+      {
+        $lookup: {
+            'from': 'cities',
+            'localField': 'city',
+            'foreignField': '_id',
+            'as': 'city',
+        },
+      },
+      { $unwind: '$city' }
     ]
 
     const aggregateQuery = Arena.aggregate(pipeline)
