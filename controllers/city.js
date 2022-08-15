@@ -27,7 +27,7 @@ export const create = async (req, res) => {
     const members = getTeamMembers.map(x => x._id.toString())
     body.name = formatCityName(body.name)
 
-    const checkForExist = await City.find({ name: body.name }).lean()
+    const checkForExist = await City.find({ name: body.name, deletedAt: null }).lean()
     if (checkForExist.some(x => x.type === 'system')) throw new CError(`Има добавен системно град с име '${body.name}'`, 409)
     if (checkForExist.some(x => members.includes(x.createdBy.toString()))) throw new CError(`Вече имате добавен град с име '${body.name}'`, 409)
 
