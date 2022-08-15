@@ -46,7 +46,9 @@ export const create = async (req, res) => {
     if (checkForExist.some(x => x.type === 'system')) throw new CError(`Има добавенa системно пързалка с име '${body.name}'`, 409)
     if (checkForExist.some(x => members.includes(x.createdBy.toString()))) throw new CError(`Вече имате добавена пързалка с име '${body.name}'`, 409)
 
-    const result = await Arena.create({ ...body, createdBy: _id })
+    const newArena = await Arena.create({ ...body, createdBy: _id })
+    const result = await Arena.populate(newArena, { path: 'city', select: 'name' })
+
     rest.successRes(res, { ...result.toObject(), canEdit: true })
   } catch (error) {
     rest.errorRes(res, error)
@@ -142,7 +144,7 @@ export const edit = async (req, res) => {
 
     const filter = { _id, deletedAt: null, type: { $ne: 'system' }, createdBy: { $in: members } }
     
-    const result = await Arena.findOneAndUpdate({ ...filter }, { ...req.body }, { new: true, runValidators: true }).lean()
+    const result = await Arena.findOneAndUpdate({ ...filter }, { ...req.body }, { new: true, runValidators: true }).populate({ path: 'city', select: 'name' }).lean()
     if (!result) throw new CError(`Такава пързалка не съществува или нямате правомощия да я редактирате!`)
     
     rest.successRes(res, { ...result, canEdit: true})
@@ -164,7 +166,7 @@ export const remove = async (req, res) => {
 
     const filter = { _id, deletedAt: null, type: { $ne: 'system' }, createdBy: { $in: members } }
     
-    const result = await Arena.findOneAndUpdate({ ...filter }, { deletedAt: new Date() }, { new: true, runValidators: true }).lean()
+    const result = await Arena.findOneAndUpdate({ ...filter }, { deletedAt: new Date() }, { new: true, runValidators: true }).populate({ path: 'city', select: 'name' }).lean()
     if (!result) throw new CError(`Такава пързалка не съществува или нямате правомощия да я изтриете!`)
     
     rest.successRes(res, result)
