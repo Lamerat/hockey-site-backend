@@ -13,6 +13,9 @@
   "license": "ISC",
   "dependencies": {
     "@sea_flanker/terminal": "^0.0.3",
+    "@types/express-fileupload": "^1.2.3",
+    "@types/form-data": "^2.5.0",
+    "@types/got": "^9.6.12",
     "@types/mongoose-aggregate-paginate-v2": "^1.0.5",
     "@types/mongoose-paginate-v2": "^1.6.5",
     "body-validator-v2": "^0.0.3",
