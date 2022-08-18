@@ -3,6 +3,7 @@ import city from './city.js'
 import team from './team.js'
 import arena from './arena.js'
 import files from './files.js'
+import news from './news.js'
 
 /**
  * Main router
@@ -15,5 +16,6 @@ export default (app) => {
   app.use('/arena', arena)
   app.use('/team', team)
   app.use('/files', files)
+  app.use('/news', news)
   app.all('*', (_, res) => res.status(404).send('404 Not Found!').end())
 }
