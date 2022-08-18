@@ -12,18 +12,18 @@ export const upload = async (req, res) => {
     const requests = []
 
     if (Array.isArray(images)) {
-      images.forEach(x => requests.push((x.data)))
+      images.forEach(x => requests.push({ data: x.data, original_name: x.name}))
     } else {
-      requests.push(images.data)
+      requests.push({ data: images.data, original_name: images.name})
     }
     
     const result = await Promise.all(requests.map(async file => {
       const formData = new FormData()
       formData.append('key', '6d207e02198a847aa98d0a2a901485a5')
       formData.append('format', 'json')
-      formData.append('source', Buffer(file).toString('base64'))
+      formData.append('source', Buffer(file.data).toString('base64'))
       const uploaded = await got.post('https://freeimage.host/api/1/upload', { body: formData, responseType: 'json' })
-      return uploaded.body.image.image
+      return { ...uploaded.body.image.image, originalName: file.original_name }
     }))
 
     rest.successRes(res, result)
