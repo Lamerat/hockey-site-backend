@@ -60,7 +60,7 @@ export const list = async (req, res) => {
       },
       { $unwind: '$user' },
       { $addFields: { photosCount: { $sum : [{ $size: '$photos' }, 1] } } },
-      { $project: { _id:1, title: 1, user: 1, createdAt: 1, photosCount: 1 } }
+      { $project: { _id: 1, title: 1, user: 1, createdAt: 1, photosCount: 1, pinned: 1 } }
     ]
 
     const aggregateQuery = News.aggregate(pipeline)
