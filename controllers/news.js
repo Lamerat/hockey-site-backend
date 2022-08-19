@@ -64,7 +64,7 @@ export const list = async (req, res) => {
       filter.createdAt = { $gte: minDate, $lte: maxDate }
     }
 
-    const secondFilter = {}
+    const secondFilter = { pinned: true }
     if (search && search.length) {
       if (searchFields && Array.isArray(searchFields) && searchFields.length) {
         secondFilter.$or = searchFields.map(z => z === 'author' ? 'user.name' : z).filter(s => s).map(field => ({ [field]: new RegExp(search, 'gi') }))
