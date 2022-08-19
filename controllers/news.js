@@ -61,8 +61,8 @@ export const list = async (req, res) => {
     if (startDate && endDate) {
       const minDate = moment(startDate).startOf('day').add(2, 'hours').toDate()
       const maxDate = moment(endDate).endOf('day').add(3, 'hours').toDate()
-      filter.createdAt = { $gte: minDate, $lte: maxDate }
-      filter.$or = [ { pinned: true } ]
+      // filter.createdAt = { $gte: minDate, $lte: maxDate }
+      filter.$or = [ { pinned: true }, { createdAt: { $gte: minDate, $lte: maxDate } }]
     }
 
     const secondFilter = {  }
