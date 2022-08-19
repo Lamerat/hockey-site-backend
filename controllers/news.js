@@ -67,7 +67,7 @@ export const list = async (req, res) => {
     const secondFilter = {}
     if (search && search.length) {
       if (searchFields && Array.isArray(searchFields) && searchFields.length) {
-        secondFilter.$or = searchFields.filter(s => s).map(field => ({ [field]: new RegExp(search, 'gi') }))
+        secondFilter.$or = searchFields.map(z => z === 'author' ? 'user.name' : z).filter(s => s).map(field => ({ [field]: new RegExp(search, 'gi') }))
       } else {
         secondFilter.$or = [
           { title: new RegExp(search, 'gi') },
