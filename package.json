@@ -19,6 +19,7 @@
     "@types/moment": "^2.13.0",
     "@types/mongoose-aggregate-paginate-v2": "^1.0.5",
     "@types/mongoose-paginate-v2": "^1.6.5",
+    "@types/nanoid": "^3.0.0",
     "body-validator-v2": "^0.0.3",
     "cors": "^2.8.5",
     "dotenv": "^16.0.1",
@@ -31,6 +32,7 @@
     "mongoose": "^6.4.0",
     "mongoose-aggregate-paginate-v2": "^1.0.6",
     "mongoose-paginate-v2": "^1.7.0",
+    "nanoid": "^4.0.0",
     "socket.io": "^2.4.1"
   }
 }

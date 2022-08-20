@@ -6,7 +6,7 @@ const photosSchema = new mongoose.Schema(
     name: { type: String, required: [true, `Missing 'photos.name'!`], index: true },
     address: { type: String, required: [true, `Missing 'photos.address'!`], index: true },
   },
-  { _id: false, timestamps: false, strict: true }
+  { _id: true, timestamps: false, strict: true }
 )
 
 const newsSchema = new mongoose.Schema(

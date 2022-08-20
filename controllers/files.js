@@ -2,6 +2,7 @@ import * as rest from '../utilities/express-helpers.js'
 import CError from '../utilities/CError.js'
 import got from 'got'
 import FormData from 'form-data'
+import { nanoid } from 'nanoid'
 
 /** @type { import('express').RequestHandler } */
 export const upload = async (req, res) => {
@@ -23,7 +24,7 @@ export const upload = async (req, res) => {
       formData.append('format', 'json')
       formData.append('source', Buffer(file.data).toString('base64'))
       const uploaded = await got.post('https://freeimage.host/api/1/upload', { body: formData, responseType: 'json' })
-      return { ...uploaded.body.image.image, originalName: file.original_name }
+      return { ...uploaded.body.image.image, _id: nanoid(), originalName: file.original_name }
     }))
 
     rest.successRes(res, result)
