@@ -1,9 +1,9 @@
 import News from '../models/News.js'
 import * as rest from '../utilities/express-helpers.js'
 import CError from '../utilities/CError.js'
-import settings from '../config/settings.js'
 import { Validator } from 'body-validator-v2'
 import moment from 'moment'
+
 
 const bodyValidator = new Validator()
 bodyValidator.addField({ name: 'title', type: 'String', required: true })
@@ -26,6 +26,7 @@ listValidator.addField({ name: 'searchFields', type: 'Array', options: { arrayVa
 listValidator.addField({ name: 'startDate', type: 'Date', required: false })
 listValidator.addField({ name: 'endDate', type: 'Date', required: false })
 
+
 /** @type { import('express').RequestHandler } */
 export const create = async (req, res) => {
   try {
@@ -37,7 +38,7 @@ export const create = async (req, res) => {
     const validate = bodyValidator.validate(body, true)
     if (!validate.success) throw new CError(validate.errors, 422)
 
-    if (body.pinned) await News.findOneAndUpdate({ pinned: true }, { pinned: false }, {})
+    if (body.pinned) await News.findOneAndUpdate({ pinned: true, team }, { pinned: false }, {})
 
     const result = await News.create({ ...body, createdBy, team })
     
@@ -108,6 +109,64 @@ export const list = async (req, res) => {
       sort: sort ? { pinned: -1, ...sort } : { pinned: -1, createdAt: -1 },
       lean: true,
     })
+
+    rest.successRes(res, result)
+  } catch (error) {
+    rest.errorRes(res, error)
+  }
+}
+
+
+/** @type { import('express').RequestHandler } */
+export const single = async (req, res) => {
+  try {
+    const { _id } = req.params
+    const { team } = req.user
+
+    const result = await News.findOne({ _id, team, deletedAt: null }).populate({ path: 'createdBy', select: 'name' }).lean()
+    if (!result) throw new CError(`Няма новина с такъв идентификационен номер!`, 404)
+
+    rest.successRes(res, result)
+  } catch (error) {
+    rest.errorRes(res, error)
+  }
+}
+
+
+/** @type { import('express').RequestHandler } */
+export const edit = async (req, res) => {
+  try {
+    const { _id } = req.params
+    const { body } = req
+    const { team } = req.user
+
+    const validate = bodyValidator.validate(body, false)
+    if (!validate.success) throw new Error(validate.errors)
+
+    const result = await News.findOneAndUpdate({ _id, team, deletedAt: null }, { ...body, team }, { new: true, runValidators: true })
+      .populate({ path: 'createdBy', select: 'name' })
+      .lean()
+    if (!result) throw new CError(`Такава новина не съществува или нямате правомощия да я редактирате!`, 404)
+
+    if (body.pinned) await News.findOneAndUpdate({ _id: { $ne: _id }, pinned: true, deletedAt: null, team }, { pinned: false }, {})
+
+    rest.successRes(res, result)
+  } catch (error) {
+    rest.errorRes(res, error)
+  }
+}
+
+
+/** @type { import('express').RequestHandler } */
+export const remove = async (req, res) => {
+  try {
+    const { _id } = req.params
+    const { team } = req.user
+
+    const result = await News.findOneAndUpdate({ _id, team, deletedAt: null }, { deletedAt: new Date(), team }, { new: true, runValidators: true })
+      .populate({ path: 'createdBy', select: 'name' })
+      .lean()
+    if (!result) throw new CError(`Такава новина не съществува или нямате правомощия да я изтриете!`, 404)
 
     rest.successRes(res, result)
   } catch (error) {
