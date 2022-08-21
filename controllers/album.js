@@ -115,7 +115,7 @@ export const remove = async (req, res) => {
     const { team } = req.user
     await validateId(_id)
 
-    const result = await Album.findOneAndUpdate({ _id, team, deletedAt: null }, { deletedAt: new Date() }, { new: true, runValidators: true})
+    const result = await Album.findOneAndUpdate({ _id, team, locked: false, deletedAt: null }, { deletedAt: new Date() }, { new: true, runValidators: true})
       .populate({ path: 'createdBy', select: 'name' })
       .lean()
     if (!result) throw new CError(`Такъв албум не съществува или нямате правомощия да го изтриете!`)
