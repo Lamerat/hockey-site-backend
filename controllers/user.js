@@ -3,15 +3,25 @@ import User from '../models/User.js'
 import CError from '../utilities/CError.js'
 import * as rest from '../utilities/express-helpers.js'
 import { generateHashedPassword, generateSalt } from '../utilities/encryption.js'
+import { Validator } from 'body-validator-v2'
 import settings from '../config/settings.js'
 
+
+const loginValidator = new Validator()
+loginValidator.addField({ name: 'email', type: 'Email', required: true })
+loginValidator.addField({ name: 'password', type: 'String', options: { minSymbols: 6 }, required: true })
 
 /** @type { import('express').RequestHandler } */
 export const login = async (req, res) => {
   try {
     const { email, password } = req.body
+    if (!email) throw new CError(`Missing 'email'!`)
+    if (!password) throw new CError(`Missing 'password'!`)
 
-    const user = await User.findOne({ email }).populate({ path: 'team', select: 'name' })
+    const validate = loginValidator.validate(req.body, true)
+    if (!validate.success) throw new CError(validate.errors, 422)
+
+    const user = await User.findOne({ email: email.toLowerCase() }).populate({ path: 'team', select: 'name' })
     if (!user) throw new CError(`Такъв потребител не съществува!`, 404)
     if (user && !user.authenticate(password.trim())) throw new CError(`Неуспешна идентификация!`, 401)
 
