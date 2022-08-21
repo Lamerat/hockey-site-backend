@@ -2,6 +2,7 @@ import News from '../models/News.js'
 import * as rest from '../utilities/express-helpers.js'
 import CError from '../utilities/CError.js'
 import { Validator } from 'body-validator-v2'
+import { validateId } from '../utilities/help-functions.js'
 import moment from 'moment'
 
 
@@ -122,6 +123,8 @@ export const single = async (req, res) => {
   try {
     const { _id } = req.params
     const { team } = req.user
+    
+    await validateId(_id)
 
     const result = await News.findOne({ _id, team, deletedAt: null }).populate({ path: 'createdBy', select: 'name' }).lean()
     if (!result) throw new CError(`Няма новина с такъв идентификационен номер!`, 404)
@@ -140,6 +143,7 @@ export const edit = async (req, res) => {
     const { body } = req
     const { team } = req.user
 
+    await validateId(_id)
     const validate = bodyValidator.validate(body, false)
     if (!validate.success) throw new Error(validate.errors)
 
@@ -162,6 +166,8 @@ export const remove = async (req, res) => {
   try {
     const { _id } = req.params
     const { team } = req.user
+
+    await validateId(_id)
 
     const result = await News.findOneAndUpdate({ _id, team, deletedAt: null }, { deletedAt: new Date(), team }, { new: true, runValidators: true })
       .populate({ path: 'createdBy', select: 'name' })
