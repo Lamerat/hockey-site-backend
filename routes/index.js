@@ -5,6 +5,7 @@ import arena from './arena.js'
 import files from './files.js'
 import news from './news.js'
 import album from './album.js'
+import photo from './photo.js'
 
 /**
  * Main router
@@ -19,5 +20,6 @@ export default (app) => {
   app.use('/files', files)
   app.use('/news', news)
   app.use('/album', album)
+  app.use('/photo', photo)
   app.all('*', (_, res) => res.status(404).send('404 Not Found!').end())
 }
