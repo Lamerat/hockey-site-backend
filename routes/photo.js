@@ -7,6 +7,6 @@ const router = express.Router()
 
 router.post('/upload', authentication, fileUpload({ createParentPath: true }), controller.upload)
 router.post('/list', authentication, controller.list)
-
+router.put('/positions', authentication, controller.updatePositions)
 
 export default router

@@ -67,3 +67,20 @@ export const list = async (req, res) => {
     rest.errorRes(res, error)
   }
 }
+
+
+/** @type { import('express').RequestHandler } */
+export const updatePositions = async (req, res) => {
+  try {
+    const { photos } = req.body
+    const { team } = req.user
+
+    if (!photos || !Array.isArray(photos) || !photos.length) throw new CError(`Missing or invalid field 'photos'!`)
+
+    const result = await Promise.all(photos.map(photo => Photo.findOneAndUpdate({ _id: photo._id, team }, { position: photo.position }, {})))
+
+    rest.successRes(res, result)
+  } catch (error) {
+    rest.errorRes(res, error)
+  }
+}
