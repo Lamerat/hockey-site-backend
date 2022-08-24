@@ -1,9 +1,10 @@
+import Photo from '../models/Photo.js'
+import Album from '../models/Album.js'
 import * as rest from '../utilities/express-helpers.js'
 import CError from '../utilities/CError.js'
 import got from 'got'
 import FormData from 'form-data'
 import { validateId } from '../utilities/help-functions.js'
-import Photo from '../models/Photo.js'
 
 /** @type { import('express').RequestHandler } */
 export const upload = async (req, res) => {
@@ -54,7 +55,7 @@ export const list = async (req, res) => {
     if (!album) throw new CError(`Missing field 'album'!`)
     await validateId(album)
 
-    const result = await Photo.paginate({ album, team }, {
+    const result = await Photo.paginate({ album, team, deletedAt: null }, {
       page: pageNumber || 1,
       limit: pageSize || 10,
       pagination: noPagination ? false : true,
@@ -79,6 +80,67 @@ export const updatePositions = async (req, res) => {
 
     const result = await Promise.all(photos.map(photo => Photo.findOneAndUpdate({ _id: photo._id, team }, { position: photo.position }, {})))
 
+    rest.successRes(res, result)
+  } catch (error) {
+    rest.errorRes(res, error)
+  }
+}
+
+
+/** @type { import('express').RequestHandler } */
+export const updateName = async (req, res) => {
+  try {
+    const { _id, name } = req.body
+    const { team } = req.user
+
+    if (!_id) throw new CError(`Missing field '_id`)
+    if (!name) throw new CError(`Missing field 'name'`)
+    await validateId(_id)
+
+    const result = await Photo.findOneAndUpdate({ _id, team, deletedAt: null }, { name }, { new: true, runValidators: true }).lean()
+    if (!result) throw new CError(`Снимка с такъв идентификационен номер не съществува!`)
+
+    rest.successRes(res, result)
+  } catch (error) {
+    rest.errorRes(res, error)
+  }
+}
+
+
+/** @type { import('express').RequestHandler } */
+export const remove = async (req, res) => {
+  try {
+    const { _id } = req.params
+    const { team } = req.user
+    await validateId(_id)
+
+    const result = await Photo.findOneAndUpdate({ _id, team, deletedAt: null }, { deletedAt: new Date() }, { new: true, runValidators: true }).lean()
+    if (!result) throw new CError(`Снимка с такъв идентификационен номер не съществува!`)
+
+    rest.successRes(res, result)
+  } catch (error) {
+    rest.errorRes(res, error)
+  }
+}
+
+
+/** @type { import('express').RequestHandler } */
+export const changeAlbum = async (req, res) => {
+  try {
+    const { photo, album } = req.body
+    const { team } = req.user
+
+    if (!photo) throw new CError(`Missing field 'photo`)
+    if (!album) throw new CError(`Missing field 'album`)
+    await Promise.all([photo, album].map(x => validateId(x)))
+
+    const checkAlbum = await Album.findOne({ _id: album, team, deletedAt: null }).lean()
+    if (!checkAlbum) throw new CError(`Албум с такъв идентификационен номер не съществува!`)
+
+    const result = await Photo.findOneAndUpdate({ _id: photo, album: { $ne: album }, team, deletedAt: null }, { album, position: 0 }, { new: true, runValidators: true }).lean()
+    if (!result) throw new CError(`Снимка с такъв идентификационен номер не съществува!`)
+
+    await Photo.updateMany({ _id: { $ne: photo }, album, deletedAt: null }, { $inc: { position: 1 } })
     rest.successRes(res, result)
   } catch (error) {
     rest.errorRes(res, error)

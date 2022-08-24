@@ -8,5 +8,8 @@ const router = express.Router()
 router.post('/upload', authentication, fileUpload({ createParentPath: true }), controller.upload)
 router.post('/list', authentication, controller.list)
 router.put('/positions', authentication, controller.updatePositions)
+router.put('/name', authentication, controller.updateName)
+router.put('/move', authentication, controller.changeAlbum)
+router.delete('/:_id', authentication, controller.remove)
 
 export default router
