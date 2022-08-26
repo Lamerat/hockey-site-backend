@@ -20,6 +20,13 @@ const roles = {
   user: 'user'
 }
 
+// PLAYER POSITIONS
+const positions = {
+  goalie: 'goalie',
+  guard: 'guard',
+  attacker: 'attacker'
+}
+
 // DATABASE SETTINGS
 const databaseAddress = {
   development: process.env.DEV_DB || `mongodb+srv://root:k4rbur4tor@cluster0.7zjjw.mongodb.net/hockey-dev?retryWrites=true&w=majority`,
@@ -34,6 +41,7 @@ const settings = {
   socketMessage,
   roles,
   defaultTeamLogo,
+  positions,
 }
 
 export default settings
