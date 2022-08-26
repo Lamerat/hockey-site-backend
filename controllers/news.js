@@ -2,8 +2,9 @@ import News from '../models/News.js'
 import * as rest from '../utilities/express-helpers.js'
 import CError from '../utilities/CError.js'
 import { Validator } from 'body-validator-v2'
-import { validateId } from '../utilities/help-functions.js'
+import { addToNewsAlbum, updateNewsAlbum, validateId } from '../utilities/help-functions.js'
 import moment from 'moment'
+import { terminal } from '@sea_flanker/terminal'
 
 
 const bodyValidator = new Validator()
@@ -42,6 +43,9 @@ export const create = async (req, res) => {
     if (body.pinned) await News.findOneAndUpdate({ pinned: true, team }, { pinned: false }, {})
 
     const result = await News.create({ ...body, createdBy, team })
+
+    const photos = [ result.coverPhoto, ...result.photos ]
+    addToNewsAlbum(photos, team, createdBy).catch((error) => terminal.red().log(`ERROR ADDING PHOTOS TO ALBUM NEWS: ${error.message}`))
     
     rest.successRes(res, result)
   } catch (error) {
@@ -147,12 +151,16 @@ export const edit = async (req, res) => {
     const validate = bodyValidator.validate(body, false)
     if (!validate.success) throw new Error(validate.errors)
 
+    const oldData = await News.findOne({ _id, team, deletedAt: null }).lean()
+    if (!oldData) throw new CError(`Такава новина не съществува или нямате правомощия да я редактирате!`, 404)
+
     const result = await News.findOneAndUpdate({ _id, team, deletedAt: null }, { ...body, team }, { new: true, runValidators: true })
       .populate({ path: 'createdBy', select: 'name' })
       .lean()
-    if (!result) throw new CError(`Такава новина не съществува или нямате правомощия да я редактирате!`, 404)
 
     if (body.pinned) await News.findOneAndUpdate({ _id: { $ne: _id }, pinned: true, deletedAt: null, team }, { pinned: false }, {})
+
+    updateNewsAlbum(oldData, result, team).catch((error) => terminal.red().log(`ERROR UPDATE NEWS ALBUM: ${error.message}`))
 
     rest.successRes(res, result)
   } catch (error) {
