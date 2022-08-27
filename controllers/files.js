@@ -13,10 +13,12 @@ export const upload = async (req, res) => {
     const requests = []
 
     if (Array.isArray(images)) {
-      images.forEach(x => requests.push({ data: x.data, original_name: x.name}))
+      images.forEach(x => requests.push({ data: x.data, mimetype: x.mimetype, original_name: x.name}))
     } else {
-      requests.push({ data: images.data, original_name: images.name})
+      requests.push({ data: images.data, mimetype: images.mimetype, original_name: images.name})
     }
+
+    if (requests.some(x => !x.mimetype.startsWith('image'))) throw new CError('Invalid file format', 406)
     
     const result = await Promise.all(requests.map(async file => {
       const formData = new FormData()
@@ -29,6 +31,7 @@ export const upload = async (req, res) => {
 
     rest.successRes(res, result)
   } catch (error) {
+    error.code = 406
     rest.errorRes(res, error)
   }
 }
