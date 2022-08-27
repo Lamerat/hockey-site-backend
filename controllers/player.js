@@ -58,7 +58,7 @@ export const list = async (req, res) => {
     const filter = { deletedAt: null, team }
     const secondFilter = {}
     
-    if (position) filter.position = { $in: position }
+    if (position && Array.isArray(position) && position.length) filter.position = { $in: position }
     if (hand) filter.hand = hand
     if (startDate && endDate) {
       const minDate = moment(startDate).startOf('day').add(2, 'hours').toDate()
