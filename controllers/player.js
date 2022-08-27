@@ -55,7 +55,7 @@ export const list = async (req, res) => {
     const { search, position, hand, startDate, endDate, minNumber, maxNumber, hidden, pageNumber, pageSize, noPagination, sort } = req.body
     const { team } = req.user
     
-    const filter = { deletedAt: null, team, $or: [{ hidden: true }, { hidden }] }
+    const filter = { deletedAt: null, team, $or: [{ hidden: false }, { hidden }] }
     const secondFilter = {}
     
     if (position && Array.isArray(position) && position.length) filter.position = { $in: position }
