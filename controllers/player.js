@@ -52,10 +52,10 @@ export const create = async (req, res) => {
 /** @type { import('express').RequestHandler } */
 export const list = async (req, res) => {
   try {
-    const { search, position, hand, startDate, endDate, minNumber, maxNumber, pageNumber, pageSize, noPagination, sort } = req.body
+    const { search, position, hand, startDate, endDate, minNumber, maxNumber, hidden, pageNumber, pageSize, noPagination, sort } = req.body
     const { team } = req.user
     
-    const filter = { deletedAt: null, team }
+    const filter = { deletedAt: null, team, hidden }
     const secondFilter = {}
     
     if (position && Array.isArray(position) && position.length) filter.position = { $in: position }
