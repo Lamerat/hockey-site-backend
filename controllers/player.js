@@ -4,7 +4,7 @@ import CError from '../utilities/CError.js'
 import { Validator } from 'body-validator-v2'
 import settings from '../config/settings.js'
 import { validateId } from '../utilities/help-functions.js'
-
+import moment from 'moment'
 
 const bodyValidator = new Validator()
 bodyValidator.addField({ name: 'firstName', type: 'String', options: { canBeEmpty: false, minSymbols: 2, maxWords: 1 }, required: true })
@@ -57,18 +57,22 @@ export const list = async (req, res) => {
     
     const filter = { deletedAt: null, team }
     const secondFilter = {}
-
-    if (search && search.trim().length ) secondFilter.fullName = new RegExp(search, 'gi')
-    if (position) secondFilter.position = { $in: position }
-    if (hand) secondFilter.hand = hand
-    if (startDate && endDate) secondFilter.birthDate = { $gte: startDate, $lte: endDate }
-
-    if (minNumber && !maxNumber) secondFilter.number = { $gte: minNumber, $lte: 99 }
-    if (maxNumber && !minNumber) secondFilter.number = { $gte: 1, $lte: maxNumber }
+    
+    if (position) filter.position = { $in: position }
+    if (hand) filter.hand = hand
+    if (startDate && endDate) {
+      const minDate = moment(startDate).startOf('day').add(2, 'hours').toDate()
+      const maxDate = moment(endDate).endOf('day').add(3, 'hours').toDate()
+      filter.birthDate = { $gte: minDate, $lte: maxDate }
+    }
+    if (minNumber && !maxNumber) filter.number = { $gte: Number(minNumber), $lte: 99 }
+    if (maxNumber && !minNumber) filter.number = { $gte: 1, $lte: Number(maxNumber) }
     if (minNumber && maxNumber) {
       if (minNumber > maxNumber) throw new CError(`Max number must be greater or equal from Min number!`)
-      secondFilter.number = { $gte: minNumber, $lte: maxNumber }
+      filter.number = { $gte: Number(minNumber), $lte: Number(maxNumber) }
     }
+
+    if (search && search.trim().length ) secondFilter.fullName = new RegExp(search, 'gi')
 
     const pipeline = [
       { $match: filter },
