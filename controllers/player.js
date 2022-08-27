@@ -52,15 +52,23 @@ export const create = async (req, res) => {
 /** @type { import('express').RequestHandler } */
 export const list = async (req, res) => {
   try {
-    const { search, position, hand, pageNumber, pageSize, noPagination, sort } = req.body
+    const { search, position, hand, startDate, endDate, minNumber, maxNumber, pageNumber, pageSize, noPagination, sort } = req.body
     const { team } = req.user
     
     const filter = { deletedAt: null, team }
     const secondFilter = {}
 
     if (search && search.trim().length ) secondFilter.fullName = new RegExp(search, 'gi')
-    if (position) secondFilter.position = position
+    if (position) secondFilter.position = { $in: position }
     if (hand) secondFilter.hand = hand
+    if (startDate && endDate) secondFilter.birthDate = { $gte: startDate, $lte: endDate }
+
+    if (minNumber && !maxNumber) secondFilter.number = { $gte: minNumber, $lte: 99 }
+    if (maxNumber && !minNumber) secondFilter.number = { $gte: 1, $lte: maxNumber }
+    if (minNumber && maxNumber) {
+      if (minNumber > maxNumber) throw new CError(`Max number must be greater or equal from Min number!`)
+      secondFilter.number = { $gte: minNumber, $lte: maxNumber }
+    }
 
     const pipeline = [
       { $match: filter },
