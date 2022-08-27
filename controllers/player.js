@@ -48,3 +48,52 @@ export const create = async (req, res) => {
   }
 }
 
+
+/** @type { import('express').RequestHandler } */
+export const list = async (req, res) => {
+  try {
+    const { search, position, hand, pageNumber, pageSize, noPagination, sort } = req.body
+    const { team } = req.user
+    
+    const filter = { deletedAt: null, team }
+    const secondFilter = {}
+
+    if (search && search.trim().length ) secondFilter.fullName = new RegExp(search, 'gi')
+    if (position) secondFilter.position = position
+    if (hand) secondFilter.hand = hand
+
+    const pipeline = [
+      { $match: filter },
+      {
+        $project: {
+          _id: 1,
+          fullName: { $concat: ['$firstName', ' ', '$lastName'] },
+          number: '$number',
+          position: '$position',
+          hand: '$hand',
+          birthDate: '$birthDate',
+          height: '$height',
+          weight: '$weight',
+          photo: '$photo',
+          description: '$description',
+          hidden: '$hidden'
+        }
+      },
+      { $match: secondFilter }
+    ]
+
+    const aggregateQuery = Player.aggregate(pipeline)
+
+    const result = await Player.aggregatePaginate(aggregateQuery, {
+      page: pageNumber || 1,
+      limit: pageSize || 10,
+      pagination: noPagination ? false : true,
+      sort: sort || { number: 1 },
+      lean: true,
+    })
+
+    rest.successRes(res, result)
+  } catch (error) {
+    rest.errorRes(res, error)
+  }
+}
