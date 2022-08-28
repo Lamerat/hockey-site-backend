@@ -37,7 +37,7 @@ export const create = async (req, res) => {
     body.firstName = formatPlayerName(body.firstName)
     body.lastName = formatPlayerName(body.lastName)
 
-    const checkForExists = await Player.findOne({ number: body.number, team }).lean()
+    const checkForExists = await Player.findOne({ number: body.number, team, deletedAt: null }).lean()
     if (checkForExists) throw new CError(`В отбора вече има играч с номер ${body.number} - ${checkForExists.firstName } ${checkForExists.lastName}`)
     
     const result = await Player.create({ ...body, team })
@@ -103,6 +103,68 @@ export const list = async (req, res) => {
       sort: sort || { number: 1 },
       lean: true,
     })
+
+    rest.successRes(res, result)
+  } catch (error) {
+    rest.errorRes(res, error)
+  }
+}
+
+
+/** @type { import('express').RequestHandler } */
+export const single = async (req, res) => {
+  try {
+    const { _id } = req.params
+    const { team } = req.user
+    await validateId(_id)
+
+    const result = await Player.findOne({ _id, team, deletedAt: null }).select('-team -deletedAt -__v -createdAt -updatedAt').lean()
+    if (!result) throw new CError(`Играч с такъв идентификационен номер не съществува!`)
+
+    rest.successRes(res, result)
+  } catch (error) {
+    rest.errorRes(res, error)
+  }
+}
+
+
+/** @type { import('express').RequestHandler } */
+export const edit = async (req, res) => {
+  try {
+    const { _id } = req.params
+    const { body } = req
+    const { team } = req.user
+    await validateId(_id)
+
+    const validate = bodyValidator.validate(body, false)
+    if (!validate.success) throw new CError(validate.errors)
+
+    if (body.number) {
+      const checkNumber = await Player.findOne({ _id: { $ne: _id }, number: body.number, deletedAt: null }).lean()
+      if (checkNumber) throw new CError(`В отбора вече има играч с номер ${body.number} - ${checkNumber.firstName } ${checkNumber.lastName}`)
+    }
+
+    const result = await Player.findOneAndUpdate({ _id, team, deletedAt: null }, { ...body, team }, { new: true, runValidators: true })
+      .select('-team -deletedAt -__v -createdAt -updatedAt').lean()
+    if (!result) throw new CError(`Играч с такъв идентификационен номер не съществува!`)
+
+    rest.successRes(res, result)
+  } catch (error) {
+    rest.errorRes(res, error)
+  }
+}
+
+
+/** @type { import('express').RequestHandler } */
+export const remove = async (req, res) => {
+  try {
+    const { _id } = req.params
+    const { team } = req.user
+    await validateId(_id)
+
+    const result = await Player.findOneAndUpdate({ _id, team, deletedAt: null }, { deletedAt: new Date() }, { new: true, runValidators: true })
+      .select('-team -deletedAt -__v -createdAt -updatedAt').lean()
+    if (!result) throw new CError(`Играч с такъв идентификационен номер не съществува!`)
 
     rest.successRes(res, result)
   } catch (error) {

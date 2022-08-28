@@ -31,7 +31,7 @@ const playerSchema = new mongoose.Schema(
 
 playerSchema.index({ createdAt: 1 })
 playerSchema.index({ updatedAt: 1 })
-playerSchema.index({ number: 1, team: 1 }, { unique: true })
+playerSchema.index({ number: 1, team: 1, deletedAt: 1 }, { unique: true })
 
 playerSchema.plugin(aggregatePaginate)
 
