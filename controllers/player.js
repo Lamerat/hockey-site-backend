@@ -68,7 +68,7 @@ export const list = async (req, res) => {
     if (minNumber && !maxNumber) filter.number = { $gte: Number(minNumber), $lte: 99 }
     if (maxNumber && !minNumber) filter.number = { $gte: 1, $lte: Number(maxNumber) }
     if (minNumber && maxNumber) {
-      if (minNumber > maxNumber) throw new CError(`Max number must be greater or equal from Min number!`)
+      if (Number(minNumber) > Number(maxNumber)) throw new CError(`Max number must be greater or equal from Min number!`)
       filter.number = { $gte: Number(minNumber), $lte: Number(maxNumber) }
     }
 
