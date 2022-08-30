@@ -40,7 +40,6 @@ const eventSchema = new mongoose.Schema(
 
 eventSchema.index({ createdAt: 1 })
 eventSchema.index({ updatedAt: 1 })
-eventSchema.index({ name: 1, team: 1 }, { unique: true })
 
 eventSchema.plugin(aggregatePaginate)
 

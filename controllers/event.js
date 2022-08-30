@@ -17,3 +17,119 @@ export const create = async (req, res) => {
     rest.errorRes(res, error)
   }
 }
+
+
+export const list = async (req, res) => {
+  try {
+    const { pageNumber, pageSize, noPagination, sort } = req.body
+    const { team } = req.user
+    
+    const filter = { deletedAt: null, team }
+    
+
+    const pipeline = [
+      { $match: filter },
+      {
+        $lookup: {
+            from: 'users',
+            localField: 'createdBy',
+            foreignField: '_id',
+            as: 'createdBy',
+            pipeline: [
+              { $project: { _id: 1, name: 1 } }
+            ]
+        },
+      },
+      {
+        $lookup: {
+            from: 'cities',
+            localField: 'city',
+            foreignField: '_id',
+            as: 'city',
+            pipeline: [
+              { $project: { _id: 1, name: 1 } }
+            ]
+        },
+      },
+      {
+        $lookup: {
+            from: 'arenas',
+            localField: 'arena',
+            foreignField: '_id',
+            as: 'arena',
+            pipeline: [
+              {
+                $lookup: {
+                    from: 'cities',
+                    localField: 'city',
+                    foreignField: '_id',
+                    as: 'city',
+                    pipeline: [
+                      { $project: { _id: 1, name: 1 } }
+                    ]
+                }
+              },
+              { $unwind: '$city' },
+              { $project: { _id: 1, name: 1, city: 1 } }
+            ]
+        },
+      },
+      {
+        $lookup: {
+            from: 'teams',
+            localField: 'homeTeam',
+            foreignField: '_id',
+            as: 'homeTeam',
+            pipeline: [
+              { $project: { _id: 1, name: 1, city: 1 } }
+            ]
+        },
+      },
+      {
+        $lookup: {
+            from: 'teams',
+            localField: 'visitorTeam',
+            foreignField: '_id',
+            as: 'visitorTeam',
+            pipeline: [
+              { $project: { _id: 1, name: 1, city: 1 } }
+            ]
+        },
+      },
+      { $unwind: '$createdBy' },
+      { $unwind: '$homeTeam' },
+      { $unwind: '$visitorTeam' },
+      { $unwind: '$arena' },
+      {
+        $project: {
+          _id: 1,
+          type: 1,
+          date: 1,
+          arena: 1,
+          description: 1,
+          homeTeam: 1,
+          visitorTeam: 1,
+          createdBy: 1,
+          finalScore: 1,
+          createdAt: 1,
+          overtime: 1,
+          draw: 1,
+          city: { $cond: { if: { $eq: ['$type', 'game'] }, then: '$arena.city', else: '$city' } } }
+      }
+    ]
+
+    const aggregateQuery = Event.aggregate(pipeline)
+
+    const result = await Event.aggregatePaginate(aggregateQuery, {
+      page: pageNumber || 1,
+      limit: pageSize || 10,
+      pagination: noPagination ? false : true,
+      sort: sort || { date: -1 },
+      lean: true,
+    })
+
+    rest.successRes(res, result)
+  } catch (error) {
+    rest.errorRes(res, error)
+  }
+}
