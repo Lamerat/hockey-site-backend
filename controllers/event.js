@@ -96,10 +96,10 @@ export const list = async (req, res) => {
             ]
         },
       },
-      { $unwind: '$createdBy' },
-      { $unwind: '$homeTeam' },
-      { $unwind: '$visitorTeam' },
-      { $unwind: '$arena' },
+      { $unwind: { path: '$createdBy', preserveNullAndEmptyArrays: true } },
+      { $unwind: { path: '$homeTeam', preserveNullAndEmptyArrays: true } },
+      { $unwind: { path: '$visitorTeam', preserveNullAndEmptyArrays: true } },
+      { $unwind: { path: '$arena', preserveNullAndEmptyArrays: true } },
       {
         $project: {
           _id: 1,
@@ -114,7 +114,7 @@ export const list = async (req, res) => {
           createdAt: 1,
           overtime: 1,
           draw: 1,
-          city: { $cond: { if: { $eq: ['$type', 'game'] }, then: '$arena.city', else: '$city' } } }
+          city: { $cond: { if: { $ne: ['$type', 'other'] }, then: '$arena.city', else: '$city' } } }
       }
     ]
 
