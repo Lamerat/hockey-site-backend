@@ -100,6 +100,7 @@ export const list = async (req, res) => {
       { $unwind: { path: '$homeTeam', preserveNullAndEmptyArrays: true } },
       { $unwind: { path: '$visitorTeam', preserveNullAndEmptyArrays: true } },
       { $unwind: { path: '$arena', preserveNullAndEmptyArrays: true } },
+      { $unwind: { path: '$city', preserveNullAndEmptyArrays: true } },
       {
         $project: {
           _id: 1,
