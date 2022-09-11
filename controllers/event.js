@@ -222,8 +222,8 @@ export const edit = async (req, res) => {
     const { type } = checkEvent
 
     const oldTeams = {
-      homeTeam: checkEvent.homeTeam.toString(),
-      visitorTeam: checkEvent.visitorTeam.toString()
+      homeTeam: checkEvent.homeTeam?.toString(),
+      visitorTeam: checkEvent.visitorTeam?.toString()
     }
 
     if (type === 'game') {
