@@ -13,6 +13,7 @@ const userSchema = new mongoose.Schema(
     tokenDate: { type: Date, default: new Date() },
     team: { type: mongoose.SchemaTypes.ObjectId, ref: 'Team' },
     role: { type: String, enum: roleEnum, default: settings.roles.user },
+    createdBy: { type: mongoose.SchemaTypes.ObjectId, ref: 'User', default: null },
     deletedAt: { type: Date, default: null },
   },
   {

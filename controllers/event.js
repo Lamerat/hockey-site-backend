@@ -76,7 +76,7 @@ export const create = async (req, res) => {
 /** @type { import('express').RequestHandler } */
 export const list = async (req, res) => {
   try {
-    const { pageNumber, pageSize, noPagination, sort, type, startDate, endDate, homeTeam, visitorTeam, arena, city } = req.body
+    const { pageNumber, pageSize, noPagination, sort, type, startDate, endDate, homeTeam, visitorTeam, arena, city, createdBy } = req.body
     const { team } = req.user
     
     const filter = { deletedAt: null, team }
@@ -103,6 +103,11 @@ export const list = async (req, res) => {
     if (arena) {
       await validateId(arena)
       filter.arena = ObjectId(arena)
+    }
+
+    if (createdBy) {
+      await validateId(createdBy)
+      filter.createdBy = ObjectId(createdBy)
     }
 
     if (city) {
