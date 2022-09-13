@@ -87,6 +87,8 @@ export const list = async (req, res) => {
       const maxDate = moment(endDate).endOf('day').add(3, 'hours').toDate()
       filter.date = { $gte: minDate, $lte: maxDate }
     }
+
+    if (type && Array.isArray(type) && type.length) filter.type = { $in: type }
     
     if (homeTeam) {
       await validateId(homeTeam)
