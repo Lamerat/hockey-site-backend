@@ -5,6 +5,7 @@ const router = express.Router()
 
 router.post('/create', authentication, controller.create)
 router.post('/list', authentication, controller.list)
+router.get('/filter', authentication, controller.filterData)
 router.get('/:_id', authentication, controller.single)
 router.put('/:_id', authentication, controller.edit)
 router.delete('/:_id', authentication, controller.remove)

@@ -2,7 +2,8 @@ import Event from '../models/Event.js'
 import CError from '../utilities/CError.js'
 import * as rest from '../utilities/express-helpers.js'
 import { Validator } from 'body-validator-v2'
-import { validateId } from '../utilities/help-functions.js'
+import { validateId, ObjectId } from '../utilities/help-functions.js'
+import moment from 'moment'
 
 
 const gameValidator = new Validator()
@@ -75,11 +76,37 @@ export const create = async (req, res) => {
 /** @type { import('express').RequestHandler } */
 export const list = async (req, res) => {
   try {
-    const { pageNumber, pageSize, noPagination, sort } = req.body
+    const { pageNumber, pageSize, noPagination, sort, type, startDate, endDate, homeTeam, visitorTeam, arena, city } = req.body
     const { team } = req.user
     
     const filter = { deletedAt: null, team }
+    const lastFilter = {}
+
+    if (startDate && endDate) {
+      const minDate = moment(startDate).startOf('day').add(2, 'hours').toDate()
+      const maxDate = moment(endDate).endOf('day').add(3, 'hours').toDate()
+      filter.date = { $gte: minDate, $lte: maxDate }
+    }
     
+    if (homeTeam) {
+      await validateId(homeTeam)
+      filter.homeTeam = ObjectId(homeTeam)
+    }
+
+    if (visitorTeam) {
+      await validateId(visitorTeam)
+      filter.visitorTeam = ObjectId(visitorTeam)
+    }
+
+    if (arena) {
+      await validateId(arena)
+      filter.arena = ObjectId(arena)
+    }
+
+    if (city) {
+      await validateId(city)
+      lastFilter['city._id'] = ObjectId(city)
+    }
 
     const pipeline = [
       { $match: filter },
@@ -169,7 +196,8 @@ export const list = async (req, res) => {
           createdAt: 1,
           overtime: 1,
           city: { $cond: { if: { $ne: ['$type', 'other'] }, then: '$arena.city', else: '$city' } } }
-      }
+      },
+      { $match: lastFilter },
     ]
 
     const aggregateQuery = Event.aggregate(pipeline)
@@ -263,6 +291,152 @@ export const remove = async (req, res) => {
     const result = await Event.findOneAndUpdate({ _id, team, deletedAt: null },{ deletedAt: new Date() }, { new: true, runValidators: true }).populate(populate).lean()
     if (!result) throw new CError(`Събитие с такъв идентификационен номер не съществува!`)
     
+    rest.successRes(res, result)
+  } catch (error) {
+    rest.errorRes(res, error)
+  }
+}
+
+
+/** @type { import('express').RequestHandler } */
+export const filterData = async (req, res) => {
+  try {
+
+    const pipeline = [
+      { $match: { deletedAt: null } },
+      {
+        $lookup: {
+            from: 'cities',
+            localField: 'city',
+            foreignField: '_id',
+            as: 'city',
+            pipeline: [
+              { $project: { _id: 1, name: 1 } }
+            ]
+        },
+      },
+      {
+        $lookup: {
+            from: 'arenas',
+            localField: 'arena',
+            foreignField: '_id',
+            as: 'arena',
+            pipeline: [
+              {
+                $lookup: {
+                    from: 'cities',
+                    localField: 'city',
+                    foreignField: '_id',
+                    as: 'city',
+                    pipeline: [
+                      { $project: { _id: 1, name: 1 } }
+                    ]
+                }
+              },
+              { $unwind: '$city' },
+              { $project: { _id: 1, name: 1, city: 1 } }
+            ]
+        },
+      },
+      { $unwind: { path: '$arena', preserveNullAndEmptyArrays: true } },
+      { $unwind: { path: '$city', preserveNullAndEmptyArrays: true } },
+      {
+        $project: {
+          _id: 1,
+          type: 1,
+          arena: '$arena._id',
+          homeTeam: 1,
+          visitorTeam: 1,
+          createdBy: 1,
+          city: { $cond: { if: { $ne: ['$type', 'other'] }, then: '$arena.city._id', else: '$city._id' } } }
+      },
+      {
+        $group: {
+          _id: 0,
+          type: { $addToSet: '$type' },
+          arena: { $addToSet: '$arena' },
+          homeTeam: { $addToSet: '$homeTeam' },
+          visitorTeam: { $addToSet: '$visitorTeam' },
+          createdBy: { $addToSet: '$createdBy' },
+          city: { $addToSet: '$city' },
+        }
+      },
+      {
+        $lookup: {
+            from: 'users',
+            localField: 'createdBy',
+            foreignField: '_id',
+            as: 'createdBy',
+            pipeline: [{ $project: { _id: 1, name: 1 } }]
+        },
+      },
+      {
+        $lookup: {
+            from: 'cities',
+            localField: 'city',
+            foreignField: '_id',
+            as: 'city',
+            pipeline: [{ $project: { _id: 1, name: 1 } }]
+        },
+      },
+      {
+        $lookup: {
+            from: 'teams',
+            localField: 'homeTeam',
+            foreignField: '_id',
+            as: 'homeTeam',
+            pipeline: [
+              {
+                $lookup: {
+                  from: 'cities',
+                  localField: 'city',
+                  foreignField: '_id',
+                  as: 'city',
+                  pipeline: [
+                    { $project: { _id: 1, name: 1 } }
+                  ]
+                }
+              },
+              { $unwind: '$city' },
+              { $project: { _id: 1, name: 1, city: 1 } }
+            ]
+        },
+      },
+      {
+        $lookup: {
+            from: 'teams',
+            localField: 'visitorTeam',
+            foreignField: '_id',
+            as: 'visitorTeam',
+            pipeline: [
+              {
+                $lookup: {
+                  from: 'cities',
+                  localField: 'city',
+                  foreignField: '_id',
+                  as: 'city',
+                  pipeline: [
+                    { $project: { _id: 1, name: 1 } }
+                  ]
+                }
+              },
+              { $unwind: '$city' },
+              { $project: { _id: 1, name: 1, city: 1 } }
+            ]
+        },
+      },
+      {
+        $lookup: {
+            from: 'arenas',
+            localField: 'arena',
+            foreignField: '_id',
+            as: 'arena',
+            pipeline: [{ $project: { _id: 1, name: 1 } }]
+        },
+      },
+    ]
+
+    const result = await Event.aggregate(pipeline)
     rest.successRes(res, result)
   } catch (error) {
     rest.errorRes(res, error)

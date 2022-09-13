@@ -3,6 +3,8 @@ import Album from '../models/Album.js'
 import Photo from '../models/Photo.js'
 import CError from './CError.js'
 
+export const ObjectId = mongoose.Types.ObjectId
+
 export const validateId = (id) => mongoose.isValidObjectId(id) ? Promise.resolve() : Promise.reject(new CError(`${id} is invalid Mongodb id!`))
 
 export const addToNewsAlbum = async (photos, team, createdBy) => {
