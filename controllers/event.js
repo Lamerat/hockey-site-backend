@@ -11,8 +11,7 @@ gameValidator.addField({ name: 'arena', type: 'Mongo', required: true })
 gameValidator.addField({ name: 'homeTeam', type: 'Mongo', required: true })
 gameValidator.addField({ name: 'visitorTeam', type: 'Mongo', required: true })
 gameValidator.addField({ name: 'description', type: 'String', required: false })
-gameValidator.addField({ name: 'draw', type: 'Boolean', required: false })
-gameValidator.addField({ name: 'overtime', type: 'String', options: { enum: ['overtime', 'penalties', '']}, required: false })
+gameValidator.addField({ name: 'overtime', type: 'String', options: { enum: ['overtime', 'penalties', 'draw', '']}, required: false })
 gameValidator.addField({ name: 'firstThird.home', type: 'Number', options: { min: 0, max: 99 }, required: false })
 gameValidator.addField({ name: 'firstThird.visitor', type: 'Number', options: { min: 0, max: 99 }, required: false })
 gameValidator.addField({ name: 'secondThird.home', type: 'Number', options: { min: 0, max: 99 }, required: false })
@@ -169,7 +168,6 @@ export const list = async (req, res) => {
           finalScore: 1,
           createdAt: 1,
           overtime: 1,
-          draw: 1,
           city: { $cond: { if: { $ne: ['$type', 'other'] }, then: '$arena.city', else: '$city' } } }
       }
     ]

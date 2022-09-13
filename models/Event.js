@@ -24,8 +24,7 @@ const eventSchema = new mongoose.Schema(
     secondThird: { type: scoreSchema, default: () => ({}) },
     thirdThird: { type: scoreSchema, default: () => ({}) },
     finalScore: { type: scoreSchema, default: () => ({}) },
-    draw: { type: Boolean },
-    overtime: { type: String, trim: true, enum: ['overtime', 'penalties'] },
+    overtime: { type: String, trim: true, enum: ['draw', 'overtime', 'penalties'] },
     
     team: { type: mongoose.SchemaTypes.ObjectId, ref: 'Team', required: [true, `Missing 'team'!`] },
     createdBy: { type: mongoose.SchemaTypes.ObjectId, ref: 'User', default: null },
