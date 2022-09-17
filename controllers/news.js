@@ -188,6 +188,7 @@ export const remove = async (req, res) => {
   }
 }
 
+
 /** @type { import('express').RequestHandler } */
 export const publicList = async (req, res) => {
   try {
@@ -215,6 +216,22 @@ export const publicList = async (req, res) => {
       sort: sort ? { pinned: -1, ...sort } : { pinned: -1, createdAt: -1 },
       lean: true,
     })
+
+    rest.successRes(res, result)
+  } catch (error) {
+    rest.errorRes(res, error)
+  }
+}
+
+
+/** @type { import('express').RequestHandler } */
+export const publicSingle = async (req, res) => {
+  try {
+    const { _id } = req.params
+    await validateId(_id)
+
+    const result = await News.findOne({ _id, deletedAt: null }).lean()
+    if (!result) throw new CError(`Няма новина с такъв идентификационен номер!`, 404)
 
     rest.successRes(res, result)
   } catch (error) {
