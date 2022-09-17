@@ -2,7 +2,7 @@ import News from '../models/News.js'
 import * as rest from '../utilities/express-helpers.js'
 import CError from '../utilities/CError.js'
 import { Validator } from 'body-validator-v2'
-import { addToNewsAlbum, updateNewsAlbum, validateId } from '../utilities/help-functions.js'
+import { addToNewsAlbum, ObjectId, updateNewsAlbum, validateId } from '../utilities/help-functions.js'
 import moment from 'moment'
 import { terminal } from '@sea_flanker/terminal'
 
@@ -181,6 +181,40 @@ export const remove = async (req, res) => {
       .populate({ path: 'createdBy', select: 'name' })
       .lean()
     if (!result) throw new CError(`Такава новина не съществува или нямате правомощия да я изтриете!`, 404)
+
+    rest.successRes(res, result)
+  } catch (error) {
+    rest.errorRes(res, error)
+  }
+}
+
+/** @type { import('express').RequestHandler } */
+export const publicList = async (req, res) => {
+  try {
+    const { pageNumber, pageSize, noPagination, team, sort, search, startDate, endDate } = req.body
+
+    if (!team) throw new CError(`Missing field team`)
+
+    const filter = { deletedAt: null, team: ObjectId(team) }
+
+    const other = []
+    if (startDate && endDate) {
+      const minDate = moment(startDate).startOf('day').add(2, 'hours').toDate()
+      const maxDate = moment(endDate).endOf('day').add(3, 'hours').toDate()
+      other.push( { createdAt: { $gte: minDate, $lte: maxDate } })
+    }
+    if (search && search.length) other.push({ $or: [{ title: new RegExp(search, 'gi') }, { text: new RegExp(search, 'gi') }] })
+    if (other.length) filter.$and = other
+
+    const aggregateQuery = News.aggregate([{ $match: filter }])
+
+    const result = await News.aggregatePaginate(aggregateQuery, {
+      page: pageNumber || 1,
+      limit: pageSize || 10,
+      pagination: !noPagination,
+      sort: sort ? { pinned: -1, ...sort } : { pinned: -1, createdAt: -1 },
+      lean: true,
+    })
 
     rest.successRes(res, result)
   } catch (error) {
