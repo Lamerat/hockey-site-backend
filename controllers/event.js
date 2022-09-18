@@ -462,11 +462,17 @@ export const publicSingleSpecial = async (req, res) => {
     if (!team) throw new CError(`Missing field 'team'`)
     await validateId(team)
 
-    const filter = { team, date: null }
+    const filter = { team, type: 'game', date: null }
     if (option === 'last') filter.date = { $lt: moment().add(3, 'hours').toDate() }
     if (option === 'next') filter.date = { $gt: moment().add(3, 'hours').toDate() }
 
-    const result = await Event.findOne(filter).lean()
+    const populate = [
+      { path: 'homeTeam', select: 'name logo', populate: { path: 'city', select: 'name' } },
+      { path: 'visitorTeam', select: 'name logo', populate: { path: 'city', select: 'name' } },
+      { path: 'arena', select: 'name', populate: { path: 'city', select: 'name' } },
+    ]
+
+    const result = await Event.findOne(filter).populate(populate).lean()
 
     rest.successRes(res, result)
   } catch (error) {
