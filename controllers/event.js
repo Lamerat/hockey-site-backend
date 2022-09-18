@@ -449,3 +449,27 @@ export const filterData = async (req, res) => {
     rest.errorRes(res, error)
   }
 }
+
+
+/** @type { import('express').RequestHandler } */
+export const publicSingleSpecial = async (req, res) => {
+  try {
+    const { team, option } = req.body
+
+    const validOptions = ['last', 'next']
+    if (!option) throw new CError(`Missing field 'option'`)
+    if (!validOptions.includes(option)) throw new CError(`Invalid 'option'! Must be ${validOptions.join(' or ')}`)
+    if (!team) throw new CError(`Missing field 'team'`)
+    await validateId(team)
+
+    const filter = { team, date: null }
+    if (option === 'last') filter.date = { $lt: moment().add(3, 'hours').toDate() }
+    if (option === 'next') filter.date = { $gt: moment().add(3, 'hours').toDate() }
+
+    const result = await Event.findOne(filter).lean()
+
+    rest.successRes(res, result)
+  } catch (error) {
+    rest.errorRes(res, error)
+  }
+}
