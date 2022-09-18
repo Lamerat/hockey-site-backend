@@ -541,7 +541,7 @@ export const publicGetByMonth = async (req, res) => {
             foreignField: '_id',
             as: 'homeTeam',
             pipeline: [
-              { $project: { _id: 1, name: 1, city: 1 } }
+              { $project: { _id: 1, name: 1, city: 1, logo: 1 } }
             ]
         },
       },
@@ -552,7 +552,7 @@ export const publicGetByMonth = async (req, res) => {
             foreignField: '_id',
             as: 'visitorTeam',
             pipeline: [
-              { $project: { _id: 1, name: 1, city: 1 } }
+              { $project: { _id: 1, name: 1, city: 1, logo: 1 } }
             ]
         },
       },
@@ -569,7 +569,9 @@ export const publicGetByMonth = async (req, res) => {
           description: 1,
           homeTeam: 1,
           visitorTeam: 1,
-          createdBy: 1,
+          firstThird: 1,
+          secondThird: 1,
+          thirdThird: 1,
           finalScore: 1,
           createdAt: 1,
           overtime: 1,
