@@ -480,3 +480,110 @@ export const publicSingleSpecial = async (req, res) => {
     rest.errorRes(res, error)
   }
 }
+
+
+/** @type { import('express').RequestHandler } */
+export const publicGetByMonth = async (req, res) => {
+  try {
+    const { team, date } = req.body
+
+    if (!team) throw new CError(`Missing field 'team'`)
+    await validateId(team)
+
+    const startDate = date ? moment(date).startOf('month').add(3, 'hours').toDate() : moment().startOf('month').add(3, 'hours').toDate()
+    const endDate = moment(startDate).add(1, 'month').toDate()
+
+    console.log(startDate)
+    console.log(endDate)
+
+    const filter = { date: { $gte: startDate, $lt: endDate }, deletedAt: null }
+
+    const pipeline = [
+      { $match: filter },
+      {
+        $lookup: {
+            from: 'cities',
+            localField: 'city',
+            foreignField: '_id',
+            as: 'city',
+            pipeline: [
+              { $project: { _id: 1, name: 1 } }
+            ]
+        },
+      },
+      {
+        $lookup: {
+            from: 'arenas',
+            localField: 'arena',
+            foreignField: '_id',
+            as: 'arena',
+            pipeline: [
+              {
+                $lookup: {
+                    from: 'cities',
+                    localField: 'city',
+                    foreignField: '_id',
+                    as: 'city',
+                    pipeline: [
+                      { $project: { _id: 1, name: 1 } }
+                    ]
+                }
+              },
+              { $unwind: '$city' },
+              { $project: { _id: 1, name: 1, city: 1 } }
+            ]
+        },
+      },
+      {
+        $lookup: {
+            from: 'teams',
+            localField: 'homeTeam',
+            foreignField: '_id',
+            as: 'homeTeam',
+            pipeline: [
+              { $project: { _id: 1, name: 1, city: 1 } }
+            ]
+        },
+      },
+      {
+        $lookup: {
+            from: 'teams',
+            localField: 'visitorTeam',
+            foreignField: '_id',
+            as: 'visitorTeam',
+            pipeline: [
+              { $project: { _id: 1, name: 1, city: 1 } }
+            ]
+        },
+      },
+      { $unwind: { path: '$homeTeam', preserveNullAndEmptyArrays: true } },
+      { $unwind: { path: '$visitorTeam', preserveNullAndEmptyArrays: true } },
+      { $unwind: { path: '$arena', preserveNullAndEmptyArrays: true } },
+      { $unwind: { path: '$city', preserveNullAndEmptyArrays: true } },
+      {
+        $project: {
+          _id: 1,
+          type: 1,
+          date: 1,
+          arena: 1,
+          description: 1,
+          homeTeam: 1,
+          visitorTeam: 1,
+          createdBy: 1,
+          finalScore: 1,
+          createdAt: 1,
+          overtime: 1,
+          city: { $cond: { if: { $ne: ['$type', 'other'] }, then: '$arena.city', else: '$city' } } }
+      },
+      { $addFields: { day: { $dayOfMonth: '$date' } } },
+      { $group: { _id: '$day', count: { $sum: 1 }, list: { $push: '$$ROOT' } } },
+      { $sort: { day: 1 } }
+    ]
+
+    const result = await Event.aggregate(pipeline)
+
+    rest.successRes(res, result)
+  } catch (error) {
+    rest.errorRes(res, error)
+  }
+}
