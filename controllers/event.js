@@ -577,6 +577,7 @@ export const publicGetByMonth = async (req, res) => {
       },
       { $addFields: { day: { $dayOfMonth: '$date' } } },
       { $group: { _id: '$day', count: { $sum: 1 }, list: { $push: '$$ROOT' } } },
+      { $addFields: { day: '$_id' } },
       { $sort: { day: 1 } }
     ]
 
