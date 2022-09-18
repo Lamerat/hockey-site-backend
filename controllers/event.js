@@ -465,14 +465,15 @@ export const publicSingleSpecial = async (req, res) => {
     const filter = { team, type: 'game', date: null }
     if (option === 'last') filter.date = { $lt: moment().add(3, 'hours').toDate() }
     if (option === 'next') filter.date = { $gt: moment().add(3, 'hours').toDate() }
-
+    
     const populate = [
       { path: 'homeTeam', select: 'name logo', populate: { path: 'city', select: 'name' } },
       { path: 'visitorTeam', select: 'name logo', populate: { path: 'city', select: 'name' } },
       { path: 'arena', select: 'name', populate: { path: 'city', select: 'name' } },
     ]
 
-    const result = await Event.findOne(filter).populate(populate).lean()
+    const sort = option === 'last' ? { date: -1 } : { date: 1 }
+    const result = await Event.findOne(filter).populate(populate).sort(sort).lean()
 
     rest.successRes(res, result)
   } catch (error) {
