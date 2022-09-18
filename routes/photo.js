@@ -12,4 +12,6 @@ router.put('/name', authentication, controller.updateName)
 router.put('/move', authentication, controller.changeAlbum)
 router.delete('/:_id', authentication, controller.remove)
 
+router.post('/public/list', controller.publicList)
+
 export default router

@@ -148,3 +148,34 @@ export const changeAlbum = async (req, res) => {
     rest.errorRes(res, error)
   }
 }
+
+
+/** @type { import('express').RequestHandler } */
+export const publicList = async (req, res) => {
+  try {
+    const { album, pageNumber, pageSize, noPagination, team } = req.body
+
+    if (!team) throw new CError(`Missing field 'team'!`)
+    await validateId(team)
+
+    const query = { album, team, deletedAt: null }
+
+    if (!album) {
+      const getMain = await Album.findOne({ team, main: true }).lean()
+      query.album = getMain._id
+    }
+
+    const result = await Photo.paginate(query, {
+      page: pageNumber || 1,
+      limit: pageSize || 10,
+      pagination: noPagination ? false : true,
+      sort: { position: 1 },
+      lean: true,
+      select: 'album address name'
+    })
+
+    rest.successRes(res, result)
+  } catch (error) {
+    rest.errorRes(res, error)
+  }
+}
