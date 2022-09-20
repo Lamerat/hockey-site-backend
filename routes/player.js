@@ -9,4 +9,7 @@ router.get('/:_id', authentication, controller.single)
 router.put('/:_id', authentication, controller.edit)
 router.delete('/:_id', authentication, controller.remove)
 
+router.post('/public/list', controller.publicList)
+router.get('/public/:_id', controller.publicSingle)
+
 export default router

@@ -3,7 +3,7 @@ import * as rest from '../utilities/express-helpers.js'
 import CError from '../utilities/CError.js'
 import { Validator } from 'body-validator-v2'
 import settings from '../config/settings.js'
-import { validateId } from '../utilities/help-functions.js'
+import { validateId, ObjectId } from '../utilities/help-functions.js'
 import moment from 'moment'
 
 const bodyValidator = new Validator()
@@ -164,6 +164,67 @@ export const remove = async (req, res) => {
 
     const result = await Player.findOneAndUpdate({ _id, team, deletedAt: null }, { deletedAt: new Date() }, { new: true, runValidators: true })
       .select('-team -deletedAt -__v -createdAt -updatedAt').lean()
+    if (!result) throw new CError(`Играч с такъв идентификационен номер не съществува!`)
+
+    rest.successRes(res, result)
+  } catch (error) {
+    rest.errorRes(res, error)
+  }
+}
+
+
+export const publicList = async (req, res) => {
+  try {
+    const { position, team, pageNumber, pageSize, noPagination, sort } = req.body
+    if (!team) throw new CError(`Missing field 'team'!`)
+    await validateId(team)
+    
+    const filter = { deletedAt: null, team: ObjectId(team), hidden: false }
+    
+    if (position && Array.isArray(position) && position.length) filter.position = { $in: position }
+
+    const pipeline = [
+      { $match: filter },
+      {
+        $project: {
+          _id: 1,
+          fullName: { $concat: ['$firstName', ' ', '$lastName'] },
+          number: '$number',
+          position: '$position',
+          hand: '$hand',
+          birthDate: '$birthDate',
+          height: '$height',
+          weight: '$weight',
+          photo: '$photo',
+          description: '$description',
+          hidden: '$hidden'
+        }
+      },
+    ]
+
+    const aggregateQuery = Player.aggregate(pipeline)
+
+    const result = await Player.aggregatePaginate(aggregateQuery, {
+      page: pageNumber || 1,
+      limit: pageSize || 10,
+      pagination: noPagination ? false : true,
+      sort: sort || { number: 1 },
+      lean: true,
+    })
+
+    rest.successRes(res, result)
+  } catch (error) {
+    rest.errorRes(res, error)
+  }
+}
+
+
+export const publicSingle = async (req, res) => {
+  try {
+    const { _id } = req.params
+    await validateId(_id)
+
+    const result = await Player.findOne({ _id, deletedAt: null }).select('-team -deletedAt -__v -createdAt -updatedAt').lean()
     if (!result) throw new CError(`Играч с такъв идентификационен номер не съществува!`)
 
     rest.successRes(res, result)
