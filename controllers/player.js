@@ -181,7 +181,7 @@ export const publicList = async (req, res) => {
     
     const filter = { deletedAt: null, team: ObjectId(team), hidden: false }
     
-    if (position && Array.isArray(position) && position.length) filter.position = { $in: position }
+    if (position && Array.isArray(position)) filter.position = { $in: position }
 
     const pipeline = [
       { $match: filter },
