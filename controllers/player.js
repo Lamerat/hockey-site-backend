@@ -173,6 +173,7 @@ export const remove = async (req, res) => {
 }
 
 
+/** @type { import('express').RequestHandler } */
 export const publicList = async (req, res) => {
   try {
     const { position, team, pageNumber, pageSize, noPagination, sort } = req.body
@@ -219,6 +220,7 @@ export const publicList = async (req, res) => {
 }
 
 
+/** @type { import('express').RequestHandler } */
 export const publicSingle = async (req, res) => {
   try {
     const { _id } = req.params
@@ -226,6 +228,34 @@ export const publicSingle = async (req, res) => {
 
     const result = await Player.findOne({ _id, deletedAt: null }).select('-team -deletedAt -__v -createdAt -updatedAt').lean()
     if (!result) throw new CError(`Играч с такъв идентификационен номер не съществува!`)
+
+    rest.successRes(res, result)
+  } catch (error) {
+    rest.errorRes(res, error)
+  }
+}
+
+
+/** @type { import('express').RequestHandler } */
+export const averageStat = async (req, res) => {
+  try {
+    const { team } = req.body
+    if (!team) throw new CError(`Missing field 'team'!`)
+    await validateId(team)
+
+    const players = await Player.find({ team, hidden: false, deletedAt: null }).lean()
+
+    const totalPlayers = players.length
+    const averageHeight = players.map(x => x.height).reduce((acc, el) => acc + el, 0) / totalPlayers
+    const averageWeight = players.map(x => x.weight).reduce((acc, el) => acc + el, 0) / totalPlayers
+    const averageYears = players.map(x => moment().diff(x.birthDate, 'years')).reduce((acc, el) => acc + el, 0) / totalPlayers
+
+    const result = {
+      totalPlayers,
+      averageHeight: averageHeight ? averageHeight.toFixed(2) : null,
+      averageWeight: averageWeight ? averageWeight.toFixed(2) : null,
+      averageYears: averageYears ? averageYears.toFixed(2) : null
+    }
 
     rest.successRes(res, result)
   } catch (error) {
