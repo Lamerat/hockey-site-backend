@@ -541,6 +541,18 @@ export const publicGetByMonth = async (req, res) => {
             foreignField: '_id',
             as: 'homeTeam',
             pipeline: [
+              {
+                $lookup: {
+                    from: 'cities',
+                    localField: 'city',
+                    foreignField: '_id',
+                    as: 'city',
+                    pipeline: [
+                      { $project: { _id: 1, name: 1 } }
+                    ]
+                }
+              },
+              { $unwind: '$city' },
               { $project: { _id: 1, name: 1, city: 1, logo: 1 } }
             ]
         },
