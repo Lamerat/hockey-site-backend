@@ -2,7 +2,7 @@ import Album from '../models/Album.js'
 import CError from '../utilities/CError.js'
 import * as rest from '../utilities/express-helpers.js'
 import { Validator } from 'body-validator-v2'
-import { validateId } from '../utilities/help-functions.js'
+import { validateId, ObjectId } from '../utilities/help-functions.js'
 
 const bodyValidator = new Validator()
 bodyValidator.addField({ name: 'name', type: 'String', options: { minSymbols: 2 }, required: true })
@@ -141,6 +141,54 @@ export const setMain = async (req, res) => {
     if (!result) throw new CError(`Такъв албум не съществува!`)
 
     await Album.findOneAndUpdate({ _id: { $ne: _id }, team, deletedAt: null, main: true }, { main: false }, {})
+
+    rest.successRes(res, result)
+  } catch (error) {
+    rest.errorRes(res, error)
+  }
+}
+
+
+/** @type { import('express').RequestHandler } */
+export const publicList = async (req, res) => {
+  try {
+    const { pageNumber, pageSize, noPagination, photoLimit = 1, team } = req.body
+
+    if (!team) throw new CError(`Missing field 'team'`, 422)
+    await validateId(team)
+
+    const validate = listValidator.validate(req.body)
+    if (!validate.success) throw new Error(validate.errors)
+    
+    const filter = { deletedAt: null, team: ObjectId(team) }
+
+    const pipeline = [
+      { $match: filter },
+      {
+        $lookup: {
+            from: 'photos',
+            localField: '_id',
+            foreignField: 'album',
+            as: 'photos',
+            pipeline: [
+              { $sort: { position: 1 } },
+              { $project: { _id: 1, position: 1, address: 1, name: 1 } }
+            ]
+        },
+      },
+      { $addFields: { photosCount: { $size: '$photos' }  }  },
+      { $project: { _id: 1, name: 1, photos: { $slice: [ '$photos', photoLimit ] }, createdAt: 1, photosCount: 1 } }
+    ]
+
+    const aggregateQuery = Album.aggregate(pipeline)
+
+    const result = await Album.aggregatePaginate(aggregateQuery, {
+      page: pageNumber || 1,
+      limit: pageSize || 10,
+      pagination: noPagination ? false : true,
+      sort: { createdAt: -1 },
+      lean: true,
+    })
 
     rest.successRes(res, result)
   } catch (error) {
