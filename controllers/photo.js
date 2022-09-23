@@ -161,7 +161,7 @@ export const publicList = async (req, res) => {
     const query = { album, team, deletedAt: null }
 
     if (!album) {
-      const getMain = await Album.findOne({ team, main: true }).lean()
+      const getMain = await Album.findOne({ team, deletedAt: null, main: true }).lean()
       query.album = getMain._id
     }
 
