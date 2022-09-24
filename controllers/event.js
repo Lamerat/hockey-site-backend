@@ -626,6 +626,7 @@ export const publicSingle = async (req, res) => {
       { path: 'homeTeam', select: 'name logo', populate: { path: 'city', select: 'name' } },
       { path: 'visitorTeam', select: 'name logo', populate: { path: 'city', select: 'name' } },
       { path: 'arena', select: 'name', populate: { path: 'city', select: 'name' } },
+      { path: 'city', select: 'name' }
     ]
     
     const result = await Event.findOne({ _id, deletedAt: null }).populate(populate).lean()
