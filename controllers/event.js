@@ -614,3 +614,25 @@ export const publicGetByMonth = async (req, res) => {
     rest.errorRes(res, error)
   }
 }
+
+
+/** @type { import('express').RequestHandler } */
+export const publicSingle = async (req, res) => {
+  try {
+    const { _id } = req.params
+    await validateId(_id)
+    
+    const populate = [
+      { path: 'homeTeam', select: 'name logo', populate: { path: 'city', select: 'name' } },
+      { path: 'visitorTeam', select: 'name logo', populate: { path: 'city', select: 'name' } },
+      { path: 'arena', select: 'name', populate: { path: 'city', select: 'name' } },
+    ]
+    
+    const result = await Event.findOne({ _id, deletedAt: null }).populate(populate).lean()
+    if (!result) throw new CError(`This event don't exists!`, 404)
+
+    rest.successRes(res, result)
+  } catch (error) {
+    rest.errorRes(res, error)
+  }
+}

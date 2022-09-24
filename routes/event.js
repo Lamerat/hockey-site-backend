@@ -10,6 +10,7 @@ router.get('/:_id', authentication, controller.single)
 router.put('/:_id', authentication, controller.edit)
 router.delete('/:_id', authentication, controller.remove)
 
+router.get('/public/:_id', controller.publicSingle)
 router.post('/public/special', controller.publicSingleSpecial)
 router.post('/public/month', controller.publicGetByMonth)
 
