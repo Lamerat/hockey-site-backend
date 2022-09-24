@@ -171,6 +171,7 @@ export const publicList = async (req, res) => {
             foreignField: 'album',
             as: 'photos',
             pipeline: [
+              { $match: { deletedAt: null } },
               { $sort: { position: 1 } },
               { $project: { _id: 1, position: 1, address: 1, name: 1 } }
             ]
