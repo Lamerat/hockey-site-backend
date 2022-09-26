@@ -9,6 +9,7 @@ import photo from './photo.js'
 import player from './player.js'
 import event from './event.js'
 import info from './info.js'
+import banner from './banner.js'
 
 /**
  * Main router
@@ -27,5 +28,6 @@ export default (app) => {
   app.use('/player', player)
   app.use('/event', event)
   app.use('/info', info)
+  app.use('/banner', banner)
   app.all('*', (_, res) => res.status(404).send('404 Not Found!').end())
 }
