@@ -142,7 +142,7 @@ export const publicList = async (req, res) => {
     if (!team) throw new CError(`Missing field 'team'`)
     await validateId(team)
 
-    const aggregateQuery = Banner.aggregate([{ $match: { deletedAt: null, team: ObjectId(team) } }, { $project: { _id: 1, photo: 1, text: 1, link: 1 } }])
+    const aggregateQuery = Banner.aggregate([{ $match: { deletedAt: null, team: ObjectId(team) } }, { $project: { _id: 1, photo: 1, text: 1, link: 1, position: 1 } }])
 
     const result = await Banner.aggregatePaginate(aggregateQuery, {
       page: pageNumber || 1,
